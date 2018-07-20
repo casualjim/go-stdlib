@@ -11,6 +11,7 @@ import (
 
 type statusCodeTracker struct {
 	http.ResponseWriter
+	http.Hijacker
 	status int
 }
 
@@ -128,7 +129,11 @@ func MiddlewareFunc(tr opentracing.Tracer, h http.HandlerFunc, options ...MWOpti
 		}
 		ext.Component.Set(sp, componentName)
 
-		w = &statusCodeTracker{w, 200}
+		w = &statusCodeTracker{
+			ResponseWriter: w,
+			Hijacker:       w.(http.Hijacker),
+			status:         200,
+		}
 		r = r.WithContext(opentracing.ContextWithSpan(r.Context(), sp))
 
 		h(w, r)
